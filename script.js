@@ -41,7 +41,7 @@ const tryPlay = id => {
 function unlockAudio() {
     if (audioReady) return;
 
-    ['buzzer','foulSound','warningSound','htSound','ftSound'].forEach(id => {
+    ['buzzer','foul','warningSound','htSound','ftSound'].forEach(id => {
         const el = $(id);
         if (el) {
             el.play().then(() => {
@@ -133,7 +133,7 @@ function resetTimer(){
 // ==========================
 function handleEndMatch(){
     if (period === 1) {
-        tryPlay('htSound');
+        tryPlay('buzzer');
         notif('⏸ HALF TIME');
 
         setTimeout(() => {
@@ -150,7 +150,7 @@ function handleEndMatch(){
         }, 3000);
 
     } else {
-        tryPlay('ftSound');
+        tryPlay('buzzer');
         notif('🏁 FULL TIME');
     }
 }
