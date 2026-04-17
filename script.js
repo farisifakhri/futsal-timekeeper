@@ -1,14 +1,11 @@
 // ==========================
-// HELPER
+// HELPER & STATE
 // ==========================
 const $ = id => document.getElementById(id);
 const fmt = s => Math.floor(s/60)+":"+String(s%60).padStart(2,'0');
 
-// ==========================
-// STATE
-// ==========================
 let timerInt = null;
-let time = 1200;
+let time = 1200; // Default 20 menit (1200 detik)
 let running = false;
 let period = 1;
 
@@ -28,20 +25,18 @@ let audioReady = false;
 const tryPlay = id => {
     const el = $(id);
     if (!el) return;
-
     el.currentTime = 0;
     el.volume = 1;
-
     const p = el.play();
     if (p !== undefined) {
-        p.catch(() => {}); // biar gak error di console
+        p.catch(e => console.log("Audio blocked by browser, click first:", e));
     }
 };
 
 function unlockAudio() {
     if (audioReady) return;
-
-    ['buzzer','foul','warningSound','htSound','ftSound'].forEach(id => {
+    // Mainkan sebentar lalu pause agar browser mengizinkan pemutaran audio
+    ['buzzer', 'foulSound', 'warningSound', 'timeoutSound'].forEach(id => {
         const el = $(id);
         if (el) {
             el.play().then(() => {
@@ -50,21 +45,19 @@ function unlockAudio() {
             }).catch(() => {});
         }
     });
-
     audioReady = true;
 }
 
 // ==========================
-// UTIL
+// NOTIFIKASI & EFEK VISUAL
 // ==========================
-const hName = () => $('homeName').value.trim() || 'HOME';
-const aName = () => $('awayName').value.trim() || 'AWAY';
-
 function notif(msg){
     const el = $('notifEl');
-    el.innerText = msg;
-    el.style.display = 'block';
-    setTimeout(()=> el.style.display = 'none', 2000);
+    if(el) {
+        el.innerText = msg;
+        el.style.display = 'block';
+        setTimeout(()=> el.style.display = 'none', 2500);
+    }
 }
 
 function flashGoal(){
@@ -72,19 +65,30 @@ function flashGoal(){
     setTimeout(()=> document.body.classList.remove('goal-flash'), 400);
 }
 
+const hName = () => $('homeName').value.trim() || 'HOME';
+const aName = () => $('awayName').value.trim() || 'AWAY';
+
 // ==========================
 // UI SYNC
 // ==========================
 function syncUI(){
+    // Update Skor Atas
     $('homeScore').innerText = homeScore;
     $('awayScore').innerText = awayScore;
 
+    // Update Chip Atas
     $('foulHomeChip').innerText = foulHome;
     $('foulAwayChip').innerText = foulAway;
-
     $('toHomeChip').innerText = toHome;
     $('toAwayChip').innerText = toAway;
 
+    // Update Strip Card Bawah
+    if($('foulH')) $('foulH').innerText = foulHome;
+    if($('foulA')) $('foulA').innerText = foulAway;
+    if($('toH')) $('toH').innerText = toHome;
+    if($('toA')) $('toA').innerText = toAway;
+
+    // Efek Merah (Warning) jika foul sudah 5 atau lebih
     $('foulHomeChip').classList.toggle('warn', foulHome >= 5);
     $('foulAwayChip').classList.toggle('warn', foulAway >= 5);
 }
@@ -99,9 +103,7 @@ function updateTimerDisplay(){
 // ==========================
 function startTimer(){
     if (running) return;
-
-    unlockAudio(); // 🔊 penting
-
+    unlockAudio();
     running = true;
     updateTimerDisplay();
 
@@ -122,125 +124,152 @@ function stopTimer(){
     updateTimerDisplay();
 }
 
-function resetTimer(){
+// ==========================
+// RESET & MATCH FLOW
+// ==========================
+function resetAll(){
     stopTimer();
-    time = parseInt($('duration').value) * 60;
+    clearInterval(toInt); // Matikan timer timeout jika sedang berjalan
+    
+    time = parseInt($('duration').value) * 60 || 1200;
+    homeScore = 0;
+    awayScore = 0;
+    foulHome = 0;
+    foulAway = 0;
+    toHome = 1;
+    toAway = 1;
+    period = 1;
+
+    $('periodBadge').innerText = 'BABAK 1';
+    $('toCountdown').innerText = '';
+    
+    syncUI();
     updateTimerDisplay();
+    notif('🔄 PERTANDINGAN DIRESET');
 }
 
-// ==========================
-// MATCH FLOW
-// ==========================
 function handleEndMatch(){
+    tryPlay('buzzer');
     if (period === 1) {
-        tryPlay('buzzer');
-        notif('⏸ HALF TIME');
-
-        setTimeout(() => {
-            period = 2;
-            $('periodBadge').innerText = 'BABAK 2';
-
-            foulHome = 0;
-            foulAway = 0;
-
-            resetTimer();
-            syncUI();
-
-            notif('▶ BABAK 2 DIMULAI');
-        }, 3000);
-
+        notif('⏸ BABAK 1 SELESAI');
     } else {
-        tryPlay('buzzer');
-        notif('🏁 FULL TIME');
+        notif('🏁 PERTANDINGAN SELESAI');
+    }
+}
+
+function nextPeriod() {
+    if (period === 1) {
+        period = 2;
+        $('periodBadge').innerText = 'BABAK 2';
+        
+        // Reset foul & timeout sesuai aturan futsal (jatah per babak)
+        foulHome = 0; 
+        foulAway = 0;
+        toHome = 1;
+        toAway = 1;
+        
+        stopTimer();
+        time = parseInt($('duration').value) * 60; // Kembalikan waktu ke menit awal
+        
+        syncUI();
+        updateTimerDisplay();
+        notif('▶ SIAP UNTUK BABAK 2');
     }
 }
 
 // ==========================
-// TIMEOUT
+// TIMEOUT LOGIC (60 Detik)
 // ==========================
 function handleTO(team){
-    if (team === 'home' && toHome <= 0) return notif('❌ Timeout Habis');
-    if (team === 'away' && toAway <= 0) return notif('❌ Timeout Habis');
+    if (team === 'home' && toHome <= 0) return notif('❌ Jatah Timeout Home Habis');
+    if (team === 'away' && toAway <= 0) return notif('❌ Jatah Timeout Away Habis');
 
-    if (team === 'home') toHome--;
-    else toAway--;
-
-    stopTimer();
-    tryPlay('buzzer');
-
+    stopTimer(); // Hentikan waktu pertandingan utama
+    
+    if (team === 'home') toHome--; else toAway--;
+    tryPlay('timeoutSound'); // Bunyi saat pelatih minta timeout
+    
     let count = 60;
-    $('toCountdown').innerText = '⏱ TO: ' + count;
+    $('toCountdown').innerText = `⏱ TIMEOUT ${team.toUpperCase()}: ${count}`;
 
     clearInterval(toInt);
     toInt = setInterval(() => {
         count--;
-
         if (count > 0) {
-            $('toCountdown').innerText = '⏱ TO: ' + count;
-
-            if (count === 10) {
-                tryPlay('warningSound');
-            }
+            $('toCountdown').innerText = `⏱ TIMEOUT ${team.toUpperCase()}: ${count}`;
+            
+            // Peringatan 10 detik terakhir
+            if (count === 10) tryPlay('warningSound'); 
         } else {
+            // Waktu timeout habis
             clearInterval(toInt);
             $('toCountdown').innerText = '';
-            tryPlay('buzzer');
+            tryPlay('buzzer'); // Buzzer panjang untuk kembali ke lapangan
+            notif('WAKTU TIMEOUT HABIS!');
         }
     }, 1000);
-
+    
     syncUI();
 }
 
 // ==========================
-// EVENT LISTENER
+// EVENT LISTENERS
 // ==========================
 document.addEventListener('DOMContentLoaded', () => {
 
-    // duration auto update
-    $('duration').addEventListener('change', resetTimer);
+    // Durasi otomatis reset waktu jika diubah
+    $('duration').addEventListener('change', () => {
+        stopTimer();
+        time = parseInt($('duration').value) * 60;
+        updateTimerDisplay();
+    });
 
-    // timer buttons
+    // Kontrol Timer Atas
     $('startBtn').onclick = startTimer;
     $('pauseBtn').onclick = stopTimer;
-    $('resetBtn').onclick = resetTimer;
+    $('resetBtn').onclick = resetAll;
+    $('nextBtn').onclick = nextPeriod;
 
-    // goal
-    $('goalHome').onclick = () => {
-        unlockAudio();
-        homeScore++;
-        syncUI();
-        flashGoal();
-        tryPlay('buzzer');
-        notif('⚽ GOAL ' + hName());
+    // Aksi Gol
+    $('goalHome').onclick = () => { 
+        unlockAudio(); homeScore++; syncUI(); flashGoal(); tryPlay('buzzer'); notif('⚽ GOAL ' + hName()); 
+    };
+    $('goalAway').onclick = () => { 
+        unlockAudio(); awayScore++; syncUI(); flashGoal(); tryPlay('buzzer'); notif('⚽ GOAL ' + aName()); 
     };
 
-    $('goalAway').onclick = () => {
-        unlockAudio();
-        awayScore++;
-        syncUI();
-        flashGoal();
-        tryPlay('buzzer');
-        notif('⚽ GOAL ' + aName());
+    // Aksi Foul
+    $('foulAddH').onclick = () => { 
+        foulHome++; syncUI(); 
+        if (foulHome === 5) { tryPlay('foulSound'); notif('⚠️ FOUL KE-5 HOME! (Titik Dua)'); }
+    };
+    $('foulAddA').onclick = () => { 
+        foulAway++; syncUI(); 
+        if (foulAway === 5) { tryPlay('foulSound'); notif('⚠️ FOUL KE-5 AWAY! (Titik Dua)'); }
     };
 
-    // foul
-    $('foulAddH').onclick = () => {
-        foulHome++;
-        syncUI();
-        if (foulHome >= 5) tryPlay('foulSound');
-    };
-
-    $('foulAddA').onclick = () => {
-        foulAway++;
-        syncUI();
-        if (foulAway >= 5) tryPlay('foulSound');
-    };
-
-    // timeout
+    // Aksi Timeout Bawah
     $('toBtnH').onclick = () => handleTO('home');
     $('toBtnA').onclick = () => handleTO('away');
 
-    // init
+    // Shortcut Keyboard (Sesuai README)
+    document.addEventListener('keydown', (e) => {
+        // Abaikan shortcut jika sedang mengetik nama tim
+        if (e.target.tagName === 'INPUT') return; 
+        
+        switch(e.code) {
+            case 'Space': e.preventDefault(); running ? stopTimer() : startTimer(); break;
+            case 'KeyH': $('goalHome').click(); break;
+            case 'KeyA': $('goalAway').click(); break;
+            case 'KeyF': $('foulAddH').click(); break;
+            case 'KeyJ': $('foulAddA').click(); break;
+            case 'Digit1': $('toBtnH').click(); break;
+            case 'Digit2': $('toBtnA').click(); break;
+            case 'KeyR': $('resetBtn').click(); break;
+        }
+    });
+
+    // Inisialisasi awal UI
     syncUI();
-    resetTimer();
+    updateTimerDisplay();
 });
