@@ -4,101 +4,170 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timekeeper Futsal - Digital Scoreboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="app">
+
+        <!-- TOPBAR -->
         <header class="topbar">
             <div class="tb-left">
                 <div class="tb-logos">
                     <div class="tb-logo-item"><img src="assets/logo/pssi.jpg" alt="PSSI"><span>PSSI</span></div>
-                    <div class="tb-logo-item"><img src="assets/logo/ffi.png"  alt="FFI"><span>FFI</span></div>
+                    <div class="tb-logo-item"><img src="assets/logo/ffi.png" alt="FFI"><span>FFI</span></div>
                     <div class="tb-logo-item"><img src="assets/logo/asprovbanten.jpg" alt="Asprov"><span>Asprov Banten</span></div>
                 </div>
-                <h1 class="tb-title">⚽ Timekeeper Futsal</h1>
+                <div class="tb-divider"></div>
+                <h1 class="tb-title">Timekeeper <span>Futsal</span></h1>
             </div>
             <div class="tb-right">
                 <span class="period-badge" id="periodBadge">BABAK 1</span>
-                <select class="sel" id="duration">
-                    <option value="10">10 menit</option>
-                    <option value="15">15 menit</option>
-                    <option value="20" selected>20 menit</option>
-                </select>
-                <button class="btn-sm btn-fs" id="fsToggle">
-                    <span id="fsIcon">⛶</span> <span id="fsLbl">Fullscreen</span>
+
+                <!-- Duration picker modern -->
+                <div class="duration-picker" id="durationPicker">
+                    <button class="dur-btn active" data-val="10">10'</button>
+                    <button class="dur-btn" data-val="15">15'</button>
+                    <button class="dur-btn active-default" data-val="20">20'</button>
+                    <button class="dur-btn" data-val="25">25'</button>
+                    <button class="dur-btn" data-val="30">30'</button>
+                </div>
+
+                <button class="btn-fs" id="fsToggle" title="Fullscreen">
+                    <svg id="fsIconExpand" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                    <svg id="fsIconCompress" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>
+                    <span>Fullscreen</span>
                 </button>
             </div>
         </header>
 
+        <!-- MAIN SCOREBOARD -->
         <main class="scoreboard">
             <div class="row-main">
+
+                <!-- HOME TEAM -->
                 <section class="team-panel home">
+                    <div class="team-label">Home</div>
                     <input class="team-name-input" id="homeName" value="HOME" maxlength="16" spellcheck="false">
                     <div class="team-score-big" id="homeScore">0</div>
-                    <button class="team-goal-btn" id="goalHome">⚽ Goal</button>
+                    <button class="team-goal-btn" id="goalHome">
+                        <span class="goal-icon">⚽</span> Goal
+                    </button>
                     <div class="chips">
-                        <div class="chip"><div class="chip-num" id="foulHomeChip">0</div><div class="chip-lbl">Foul</div></div>
-                        <div class="chip"><div class="chip-num" id="toHomeChip">1</div><div class="chip-lbl">Timeout</div></div>
-                    </div>
-                </section>
-
-                <section class="timer-col">
-                    <div class="timer-lbl">Match Time</div>
-                    <div class="timer-big paused" id="timer">20:00</div>
-                    <div class="timer-btns">
-                        <button class="tbtn tbtn-start" id="startBtn">▶ Start</button>
-                        <button class="tbtn tbtn-pause" id="pauseBtn">⏸ Pause</button>
-                        <div class="tbtn-group">
-                            <button class="tbtn tbtn-reset" id="resetBtn">↺ Reset</button>
-                            <button class="tbtn tbtn-next" id="nextBtn">Babak ›</button>
+                        <div class="chip">
+                            <div class="chip-num" id="foulHomeChip">0</div>
+                            <div class="chip-lbl">Foul</div>
+                        </div>
+                        <div class="chip">
+                            <div class="chip-num" id="toHomeChip">1</div>
+                            <div class="chip-lbl">Timeout</div>
                         </div>
                     </div>
                 </section>
 
-                <section class="team-panel away">
-                    <input class="team-name-input" id="awayName" value="AWAY" maxlength="16" spellcheck="false">
-                    <div class="team-score-big" id="awayScore">0</div>
-                    <button class="team-goal-btn" id="goalAway">⚽ Goal</button>
-                    <div class="chips">
-                        <div class="chip"><div class="chip-num" id="foulAwayChip">0</div><div class="chip-lbl">Foul</div></div>
-                        <div class="chip"><div class="chip-num" id="toAwayChip">1</div><div class="chip-lbl">Timeout</div></div>
+                <!-- CENTER TIMER -->
+                <section class="timer-col">
+                    <div class="timer-lbl">MATCH TIME</div>
+                    <div class="timer-wrap">
+                        <div class="timer-big paused" id="timer">20:00</div>
+                    </div>
+                    <div class="timer-btns">
+                        <button class="tbtn tbtn-start" id="startBtn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            Start
+                        </button>
+                        <button class="tbtn tbtn-pause" id="pauseBtn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                            Pause
+                        </button>
+                        <button class="tbtn tbtn-reset" id="resetBtn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+                            Reset
+                        </button>
+                        <button class="tbtn tbtn-next" id="nextBtn">
+                            Babak 2
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
                     </div>
                 </section>
+
+                <!-- AWAY TEAM -->
+                <section class="team-panel away">
+                    <div class="team-label">Away</div>
+                    <input class="team-name-input" id="awayName" value="AWAY" maxlength="16" spellcheck="false">
+                    <div class="team-score-big" id="awayScore">0</div>
+                    <button class="team-goal-btn" id="goalAway">
+                        <span class="goal-icon">⚽</span> Goal
+                    </button>
+                    <div class="chips">
+                        <div class="chip">
+                            <div class="chip-num" id="foulAwayChip">0</div>
+                            <div class="chip-lbl">Foul</div>
+                        </div>
+                        <div class="chip">
+                            <div class="chip-num" id="toAwayChip">1</div>
+                            <div class="chip-lbl">Timeout</div>
+                        </div>
+                    </div>
+                </section>
+
             </div>
 
+            <!-- BOTTOM STRIP -->
             <footer class="row-bottom">
                 <div class="strip-card">
-                    <div class="strip-title">⚠ Team Foul</div>
+                    <div class="strip-icon">⚠️</div>
+                    <div class="strip-title">Team Foul</div>
                     <div class="dual-stat">
-                        <div class="ds-item"><div class="ds-num" id="foulH">0</div><div class="ds-sub" id="foulHlbl">Home</div></div>
-                        <div class="ds-item"><div class="ds-num" id="foulA">0</div><div class="ds-sub" id="foulAlbl">Away</div></div>
+                        <div class="ds-item">
+                            <div class="ds-num" id="foulH">0</div>
+                            <div class="ds-sub" id="foulHlbl">Home</div>
+                        </div>
+                        <div class="ds-sep"></div>
+                        <div class="ds-item">
+                            <div class="ds-num" id="foulA">0</div>
+                            <div class="ds-sub" id="foulAlbl">Away</div>
+                        </div>
                     </div>
                     <div class="ds-btn-row">
-                        <button class="ds-btn btn-red-s" id="foulAddH">+ Home</button>
-                        <button class="ds-btn btn-red-s" id="foulAddA">+ Away</button>
+                        <button class="ds-btn btn-danger" id="foulAddH">+ Home</button>
+                        <button class="ds-btn btn-danger" id="foulAddA">+ Away</button>
                     </div>
                 </div>
 
-                <div class="strip-card">
-                    <div class="strip-title">⏸ Timeout</div>
+                <div class="strip-card timeout-card">
+                    <div class="strip-icon">⏸</div>
+                    <div class="strip-title">Timeout</div>
                     <div class="to-countdown" id="toCountdown"></div>
                     <div class="dual-stat">
-                        <div class="ds-item"><div class="ds-num" id="toH">1</div><div class="ds-sub" id="toHlbl">Home</div></div>
-                        <div class="ds-item"><div class="ds-num" id="toA">1</div><div class="ds-sub" id="toAlbl">Away</div></div>
+                        <div class="ds-item">
+                            <div class="ds-num" id="toH">1</div>
+                            <div class="ds-sub" id="toHlbl">Home</div>
+                        </div>
+                        <div class="ds-sep"></div>
+                        <div class="ds-item">
+                            <div class="ds-num" id="toA">1</div>
+                            <div class="ds-sub" id="toAlbl">Away</div>
+                        </div>
                     </div>
                     <div class="ds-btn-row">
-                        <button class="ds-btn btn-amber-s" id="toBtnH">Timeout Home</button>
-                        <button class="ds-btn btn-amber-s" id="toBtnA">Timeout Away</button>
+                        <button class="ds-btn btn-amber" id="toBtnH">Timeout Home</button>
+                        <button class="ds-btn btn-amber" id="toBtnA">Timeout Away</button>
                     </div>
                 </div>
             </footer>
         </main>
     </div>
 
+    <!-- AUDIO -->
     <audio id="buzzer" src="assets/sounds/buzzer.mp3"></audio>
     <audio id="foulSound" src="assets/sounds/foul.mp3"></audio>
     <audio id="warningSound" src="assets/sounds/warning.mp3"></audio>
     <audio id="timeoutSound" src="assets/sounds/timeout.mp3"></audio>
+
+    <!-- NOTIF -->
     <div class="notif" id="notifEl"></div>
 
     <script src="script.js"></script>
