@@ -130,23 +130,83 @@ function updateTimerDisplay() {
 // ==========================
 function initDurationPicker() {
     const btns = document.querySelectorAll('.dur-btn');
-    // set default active = 20
     btns.forEach(btn => {
         btn.classList.remove('active');
         if (parseInt(btn.dataset.val) === 20) btn.classList.add('active');
 
         btn.addEventListener('click', () => {
-            if (running) return; // jangan ganti saat timer jalan
-
+            if (running) return;
             btns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
             selectedDuration = parseInt(btn.dataset.val);
             stopTimer();
             time = selectedDuration * 60;
             updateTimerDisplay();
             notif(`⏱ Durasi diubah ke ${selectedDuration} menit`);
         });
+    });
+}
+
+// ==========================
+// EDITABLE TIMER
+// ==========================
+function initEditableTimer() {
+    const timerEl = $('timer');
+
+    timerEl.addEventListener('dblclick', () => {
+        if (running) return notif('⚠️ Pause dulu sebelum edit waktu');
+        timerEl.contentEditable = 'true';
+        timerEl.classList.add('editing');
+        timerEl.focus();
+
+        // Select all text
+        const range = document.createRange();
+        range.selectNodeContents(timerEl);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    });
+
+    timerEl.addEventListener('keydown', (e) => {
+        if (e.code === 'Enter') { e.preventDefault(); timerEl.blur(); }
+        if (e.code === 'Escape') {
+            timerEl.contentEditable = 'false';
+            timerEl.classList.remove('editing');
+            updateTimerDisplay(); // revert
+        }
+        // Only allow digits and colon
+        if (!e.ctrlKey && !e.metaKey && e.key.length === 1 && !/[\d:]/.test(e.key)) {
+            e.preventDefault();
+        }
+    });
+
+    timerEl.addEventListener('blur', () => {
+        timerEl.contentEditable = 'false';
+        timerEl.classList.remove('editing');
+
+        const raw = timerEl.innerText.trim();
+        // Parse MM:SS or plain seconds
+        let parsed = null;
+        const matchColon = raw.match(/^(\d{1,2}):(\d{2})$/);
+        const matchNum   = raw.match(/^\d+$/);
+
+        if (matchColon) {
+            const mins = parseInt(matchColon[1]);
+            const secs = parseInt(matchColon[2]);
+            if (secs < 60) parsed = mins * 60 + secs;
+        } else if (matchNum) {
+            parsed = parseInt(raw);
+        }
+
+        const MAX = 20 * 60; // 1200 detik
+        if (parsed !== null && parsed > 0) {
+            time = Math.min(parsed, MAX);
+            if (parsed > MAX) notif('⚠️ Maksimal 20 menit! Diset ke 20:00');
+            else notif(`⏱ Waktu diubah ke ${fmt(time)}`);
+        } else {
+            notif('⚠️ Format tidak valid. Gunakan MM:SS');
+        }
+        updateTimerDisplay();
     });
 }
 
@@ -318,6 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initDurationPicker();
     initFullscreen();
+    initEditableTimer();
 
     $('startBtn').onclick = startTimer;
     $('pauseBtn').onclick = stopTimer;

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timekeeper Futsal - Digital Scoreboard</title>
+    <link rel="icon" type="image/png" href="assets/logo/asprovbanten.jpg">
+    <link rel="apple-touch-icon" href="assets/logo/asprovbanten.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -28,11 +30,9 @@
 
                 <!-- Duration picker modern -->
                 <div class="duration-picker" id="durationPicker">
-                    <button class="dur-btn active" data-val="10">10'</button>
+                    <button class="dur-btn" data-val="10">10'</button>
                     <button class="dur-btn" data-val="15">15'</button>
-                    <button class="dur-btn active-default" data-val="20">20'</button>
-                    <button class="dur-btn" data-val="25">25'</button>
-                    <button class="dur-btn" data-val="30">30'</button>
+                    <button class="dur-btn active" data-val="20">20'</button>
                 </div>
 
                 <button class="btn-fs" id="fsToggle" title="Fullscreen">
@@ -71,7 +71,7 @@
                 <section class="timer-col">
                     <div class="timer-lbl">MATCH TIME</div>
                     <div class="timer-wrap">
-                        <div class="timer-big paused" id="timer">20:00</div>
+                        <div class="timer-big paused" id="timer" contenteditable="false" title="Klik untuk edit waktu (maks 20:00)">20:00</div>
                     </div>
                     <div class="timer-btns">
                         <button class="tbtn tbtn-start" id="startBtn">

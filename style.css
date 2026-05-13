@@ -571,9 +571,16 @@ body {
     white-space: nowrap;
 }
 
-/* =========================================
-   NOTIFICATION
-========================================= */
+.timer-big.editing {
+    outline: 2px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 0 8px;
+    cursor: text;
+}
+
+.timer-big[contenteditable="true"] {
+    caret-color: var(--accent);
+}
 .notif {
     position: fixed;
     top: 72px;
